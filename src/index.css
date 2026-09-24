@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Sweet, luminous light theme color tokens and warm dark theme */
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Custom sweet delicate scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Sweet soft luminous glass panels */
+.sweet-card-light {
+  background: #ffffff;
+  border-color: #f1f0ea;
+  box-shadow: 0 4px 20px -2px rgba(236, 72, 153, 0.04), 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+}
+
+.sweet-glow-rose {
+  box-shadow: 0 0 30px -4px rgba(244, 114, 182, 0.2);
+}
+
+.sweet-glow-indigo {
+  box-shadow: 0 0 30px -4px rgba(99, 102, 241, 0.18);
+}

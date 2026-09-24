@@ -1,0 +1,6 @@
+{
+  "name": "OperateAI - AI Business Operating System",
+  "description": "Multi-tenant AI business operating system that captures leads, closes sales, books appointments, processes orders, and runs 24/7 automations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
