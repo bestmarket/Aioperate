@@ -28,6 +28,7 @@ import {
   ChevronUp,
   Tag,
   CheckCheck,
+  UserCheck,
 } from 'lucide-react';
 
 export interface LiveChatWidgetModalProps {
@@ -90,6 +91,16 @@ export const LiveChatWidgetModal: React.FC<LiveChatWidgetModalProps> = ({
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [teaserDismissed, setTeaserDismissed] = useState(false);
   const [showTeaser, setShowTeaser] = useState(false);
+  const [visitorId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('operateai_visitor_id');
+      if (stored) return stored;
+      const initial = 'vis_1043';
+      localStorage.setItem('operateai_visitor_id', initial);
+      return initial;
+    }
+    return 'vis_1043';
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -168,8 +179,9 @@ export const LiveChatWidgetModal: React.FC<LiveChatWidgetModalProps> = ({
     }
   }, [isOpen, teaserDismissed]);
 
-  // Initialize conversation
+  // Initialize conversation with returning visitor recognition
   const initChat = () => {
+    const isReturning = visitorId === 'vis_1043';
     const newConvId = `conv_${Date.now()}`;
     setConversationId(newConvId);
     setPaymentSuccessOrder(null);
@@ -179,7 +191,11 @@ export const LiveChatWidgetModal: React.FC<LiveChatWidgetModalProps> = ({
         conversationId: newConvId,
         businessId,
         sender: 'agent',
-        content: `Good day. Welcome to ${businessName} Client Advisory.
+        content: isReturning
+          ? `Welcome back to ${businessName} Client Advisory!
+
+I noticed you previously explored our Monaco Pure Cashmere Overcoat and tailored suiting collections. Would you like to resume where you left off, verify sizing, or book a private fitting consultation today?`
+          : `Good day. Welcome to ${businessName} Client Advisory.
 
 I am your dedicated Autonomous Executive Concierge. I have direct access to our master catalog, bespoke tailoring ateliers, VIP private fitting calendar, and automated billing desk.
 
@@ -194,6 +210,32 @@ How may I assist your style, sizing, custom commission, or appointment today?`,
       initChat();
     }
   }, [isOpen, businessId]);
+
+  // Track live chat event on backend
+  useEffect(() => {
+    if (isOpen) {
+      api.trackVisitorEvent(businessId, {
+        visitorId,
+        type: 'chat_started',
+        page: window.location.pathname || '/shop',
+        metadata: { channel: 'website_chat' },
+      }).catch(() => {});
+    }
+  }, [isOpen, businessId, visitorId]);
+
+  // Sync incoming live messages from business owner
+  useEffect(() => {
+    if (!isOpen || !conversationId) return;
+    const interval = setInterval(async () => {
+      try {
+        const msgs = await api.getConversationMessages(businessId, conversationId);
+        if (msgs && msgs.length > messages.length) {
+          setMessages(msgs);
+        }
+      } catch {}
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isOpen, conversationId, businessId, messages.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -289,9 +331,11 @@ How may I assist your style, sizing, custom commission, or appointment today?`,
         conversationId: conversationId || `conv_${Date.now()}`,
         message: text,
         customerMeta: {
-          name: 'Distinguished Client',
-          contact: 'client.advisory@luxurymail.com',
+          name: visitorId === 'vis_1043' ? 'Alexander Wright' : 'Distinguished Client',
+          contact: visitorId === 'vis_1043' ? 'alex.wright@vanguard-cap.com' : 'client.advisory@luxurymail.com',
           channel: 'website_chat',
+          visitorId,
+          page: window.location.pathname || '/shop',
         },
       });
 
@@ -548,20 +592,36 @@ How may I assist your style, sizing, custom commission, or appointment today?`,
                 key={m.id}
                 className={`flex gap-3 ${isAgent ? 'justify-start' : 'justify-end'} group`}
               >
-                {/* Agent Avatar */}
+                {/* Agent or Staff Avatar */}
                 {isAgent && (
-                  <div className="w-8 h-8 rounded-xl bg-stone-900 dark:bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs shadow-xs">
-                    {businessName[0] || 'A'}
+                  <div
+                    className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs shadow-xs ${
+                      (m as any).metadata?.isStaff
+                        ? 'bg-amber-600 border border-amber-400'
+                        : 'bg-stone-900 dark:bg-rose-600 border border-stone-700 dark:border-rose-400'
+                    }`}
+                    title={(m as any).metadata?.isStaff ? `Live Staff Concierge (${(m as any).metadata?.staffName || 'Staff'})` : `${businessName} AI Concierge`}
+                  >
+                    {(m as any).metadata?.isStaff ? <UserCheck className="w-4 h-4" /> : (businessName[0] || 'A')}
                   </div>
                 )}
 
                 <div
                   className={`max-w-[88%] sm:max-w-[82%] rounded-2xl px-3.5 py-3 space-y-2.5 font-normal text-xs sm:text-[13px] ${
                     isAgent
-                      ? 'bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 text-stone-700 dark:text-slate-200 shadow-xs'
+                      ? (m as any).metadata?.isStaff
+                        ? 'bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-stone-800 dark:text-stone-100 shadow-xs'
+                        : 'bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 text-stone-700 dark:text-slate-200 shadow-xs'
                       : 'bg-stone-900 dark:bg-rose-600 text-white rounded-br-xs shadow-xs'
                   }`}
                 >
+                  {/* Staff Header Badge */}
+                  {(m as any).metadata?.isStaff && (
+                    <div className="text-[10px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1 pb-1 border-b border-amber-200/60 dark:border-amber-800/40">
+                      <UserCheck className="w-3 h-3" /> Live Staff Concierge ({(m as any).metadata?.staffName || 'Owner'})
+                    </div>
+                  )}
+
                   {/* Message Prose */}
                   {renderMessageContent(m.content)}
 

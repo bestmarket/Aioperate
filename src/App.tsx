@@ -43,6 +43,7 @@ import { ReputationView } from './components/reputation/ReputationView.tsx';
 import { DocumentGeneratorView } from './components/documents/DocumentGeneratorView.tsx';
 import { AdminPortalView } from './components/admin/AdminPortalView.tsx';
 import { AdminSecurityGate } from './components/admin/AdminSecurityGate.tsx';
+import { LiveWebsiteView } from './components/visitors/LiveWebsiteView.tsx';
 
 function MainApp() {
   // Determine initial root mode from URL hash or default to 'landing'
@@ -99,6 +100,8 @@ function MainApp() {
         );
       case 'team_ai':
         return <AiTeamView onOpenTestSandbox={() => setTestModalOpen(true)} />;
+      case 'live_website':
+        return <LiveWebsiteView onOpenTestModal={() => setTestModalOpen(true)} />;
       case 'marketing':
         return <MarketingStudioView />;
       case 'strategy':

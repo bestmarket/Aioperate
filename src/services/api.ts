@@ -19,6 +19,18 @@ import {
   WhatsAppConfig,
   TeamMember,
   IntegrationStatus,
+  AdminPaymentGateways,
+  AiTeamMember,
+  VoiceCall,
+  MarketingAsset,
+  BusinessPlan,
+  GeneratedWebsite,
+  DocumentRecord,
+  ReputationItem,
+  BrandKit,
+  VisitorProfile,
+  VisitorEvent,
+  WebsiteAiConfig,
 } from '../types.ts';
 
 const API_BASE = '/api';
@@ -94,7 +106,7 @@ export const api = {
     businessId: string;
     conversationId?: string;
     message: string;
-    customerMeta?: { name?: string; contact?: string; channel?: string };
+    customerMeta?: { name?: string; contact?: string; channel?: string; visitorId?: string; page?: string };
   }) =>
     request<{
       conversationId: string;
@@ -192,6 +204,11 @@ export const api = {
       body: JSON.stringify(data),
     }),
   getPayments: (businessId: string) => request<PaymentRequest[]>(`/payments/${businessId}`),
+  createPaymentRequest: (businessId: string, data: Partial<PaymentRequest>) =>
+    request<PaymentRequest>(`/payments/${businessId}/create`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   simulatePaymentSuccess: (businessId: string, orderId?: string, paymentId?: string) =>
     request<{ success: boolean; message: string; order: Order; payment: PaymentRequest }>(
       '/payments/simulate-success',
@@ -200,6 +217,27 @@ export const api = {
         body: JSON.stringify({ businessId, orderId, paymentId }),
       }
     ),
+  simulateWebhookTest: (data: {
+    gateway: 'lemonsqueezy' | 'crypto' | 'stripe';
+    eventType: string;
+    orderId?: string;
+    paymentId?: string;
+    businessId: string;
+    amount?: number;
+    currency?: string;
+    cryptoToken?: string;
+  }) =>
+    request<{
+      success: boolean;
+      message: string;
+      signature: string;
+      payload: any;
+      order?: Order;
+      payment?: PaymentRequest;
+    }>('/webhooks/test-simulate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // Automations & Campaigns
   getAutomations: (businessId: string) => request<Automation[]>(`/automations/${businessId}`),
@@ -257,11 +295,143 @@ export const api = {
       method: 'POST',
     }),
 
+  // AI Team & Voice Engine
+  getAiTeam: (businessId: string) => request<AiTeamMember[]>(`/ai-team/${businessId}`),
+  updateAiTeamMember: (businessId: string, memberId: string, data: Partial<AiTeamMember>) =>
+    request<AiTeamMember>(`/ai-team/${businessId}/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  getVoiceCalls: (businessId: string) => request<VoiceCall[]>(`/voice/${businessId}/calls`),
+  simulateVoiceCall: (businessId: string, payload: { callerName?: string; callerPhone?: string; topic?: string; voiceTone?: string }) =>
+    request<VoiceCall>(`/voice/${businessId}/simulate-call`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // AI Daily Brief
+  getDailyBrief: (businessId: string) => request<any>(`/daily-brief/${businessId}`),
+
+  // Marketing Studio
+  getMarketingAssets: (businessId: string) => request<MarketingAsset[]>(`/marketing/${businessId}`),
+  generateMarketingAsset: (businessId: string, payload: any) =>
+    request<any>(`/marketing/${businessId}/generate`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  createMarketingAsset: (businessId: string, data: Partial<MarketingAsset>) =>
+    request<MarketingAsset>(`/marketing/${businessId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  deleteMarketingAsset: (businessId: string, id: string) =>
+    request<{ success: boolean }>(`/marketing/${businessId}/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Business Strategy & Plans
+  getBusinessPlans: (businessId: string) => request<BusinessPlan[]>(`/strategy/${businessId}`),
+  generateBusinessPlan: (businessId: string, payload: any) =>
+    request<any>(`/strategy/${businessId}/generate`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  createBusinessPlan: (businessId: string, data: Partial<BusinessPlan>) =>
+    request<BusinessPlan>(`/strategy/${businessId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // AI Website Builder
+  getWebsites: (businessId: string) => request<GeneratedWebsite[]>(`/websites/${businessId}`),
+  generateWebsite: (businessId: string, payload: any) =>
+    request<any>(`/websites/${businessId}/generate`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  createWebsite: (businessId: string, data: Partial<GeneratedWebsite>) =>
+    request<GeneratedWebsite>(`/websites/${businessId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Documents & Invoices
+  getDocuments: (businessId: string) => request<DocumentRecord[]>(`/documents/${businessId}`),
+  createDocument: (businessId: string, data: Partial<DocumentRecord>) =>
+    request<DocumentRecord>(`/documents/${businessId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateDocument: (businessId: string, id: string, data: Partial<DocumentRecord>) =>
+    request<DocumentRecord>(`/documents/${businessId}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Reputation & Reviews
+  getReviews: (businessId: string) => request<ReputationItem[]>(`/reputation/${businessId}`),
+  addReview: (businessId: string, data: Partial<ReputationItem>) =>
+    request<ReputationItem>(`/reputation/${businessId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  replyReview: (businessId: string, id: string, reply: string) =>
+    request<ReputationItem>(`/reputation/${businessId}/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ reply }),
+    }),
+
+  // Brand Kit & Creative Studio
+  getBrandKit: (businessId: string) => request<BrandKit>(`/brand-kit/${businessId}`),
+  updateBrandKit: (businessId: string, data: Partial<BrandKit>) =>
+    request<BrandKit>(`/brand-kit/${businessId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   // Admin
   getAdminOverview: () => request<any>('/admin/overview'),
-  getPaymentGateways: () => request<any>('/admin/payment-gateways'),
-  updatePaymentGateways: (data: any) =>
-    request<any>('/admin/payment-gateways', {
+  getPaymentGateways: () => request<AdminPaymentGateways>('/admin/payment-gateways'),
+  updatePaymentGateways: (data: Partial<AdminPaymentGateways>) =>
+    request<AdminPaymentGateways>('/admin/payment-gateways', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Live Visitor Intelligence & Website AI Control Machine
+  getVisitors: (businessId: string) => request<VisitorProfile[]>(`/visitors/${businessId}`),
+  getVisitor: (businessId: string, id: string) =>
+    request<VisitorProfile & { events?: VisitorEvent[] }>(`/visitors/${businessId}/${id}`),
+  getVisitorEvents: (businessId: string, id: string) =>
+    request<VisitorEvent[]>(`/visitors/${businessId}/${id}/events`),
+  trackVisitorEvent: (businessId: string, data: any) =>
+    request<any>(`/visitors/${businessId}/track`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  sendMessageToVisitor: (businessId: string, visitorId: string, content: string, staffName?: string) =>
+    request<any>(`/visitors/${businessId}/${visitorId}/message`, {
+      method: 'POST',
+      body: JSON.stringify({ content, staffName }),
+    }),
+  toggleHumanTakeover: (businessId: string, visitorId: string, humanTakeover: boolean, staffName?: string) =>
+    request<any>(`/visitors/${businessId}/${visitorId}/takeover`, {
+      method: 'POST',
+      body: JSON.stringify({ humanTakeover, staffName }),
+    }),
+  transferVisitor: (businessId: string, visitorId: string, data: { targetRole?: string; staffName?: string }) =>
+    request<any>(`/visitors/${businessId}/${visitorId}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  identifyVisitor: (businessId: string, data: { visitorId: string; name?: string; email?: string; phone?: string }) =>
+    request<any>(`/visitors/${businessId}/identify`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getWebsiteAiConfig: (businessId: string) => request<WebsiteAiConfig>(`/website-ai/${businessId}/config`),
+  updateWebsiteAiConfig: (businessId: string, data: Partial<WebsiteAiConfig>) =>
+    request<WebsiteAiConfig>(`/website-ai/${businessId}/config`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

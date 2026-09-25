@@ -215,17 +215,43 @@ export interface AiProcessResult {
     result: Record<string, any>;
   }[];
   escalated?: boolean;
+  assignedAgentRole?: 'receptionist' | 'sales' | 'support' | 'booking' | 'retention';
+  websiteAction?: {
+    type: string;
+    payload?: Record<string, any>;
+  };
+  detectedIntent?: string;
 }
 
 export async function processCustomerMessage(
   businessId: string,
   conversationId: string,
   userMessage: string,
-  customerMeta?: { name?: string; contact?: string; channel?: string }
+  customerMeta?: {
+    name?: string;
+    contact?: string;
+    channel?: string;
+    visitorId?: string;
+    page?: string;
+  }
 ): Promise<AiProcessResult> {
   const business = db.getBusiness(businessId);
   if (!business) {
     throw new Error(`Business ${businessId} not found.`);
+  }
+
+  // Check visitor human takeover
+  const visitorId = customerMeta?.visitorId;
+  const visitor = visitorId ? db.visitors[businessId]?.find((v) => v.id === visitorId) : null;
+
+  if (visitor?.humanTakeover) {
+    return {
+      reply: '',
+      toolCallsExecuted: [],
+      escalated: true,
+      assignedAgentRole: (visitor.currentAgentRole as any) || 'receptionist',
+      detectedIntent: 'Human staff handling conversation',
+    };
   }
 
   const agent = db.agents[businessId];
@@ -246,6 +272,30 @@ export async function processCustomerMessage(
     .map((s) => `- ${s.name} (ID: ${s.id}) | Duration: ${s.durationMinutes} mins | Price: $${s.price} (Deposit: $${s.depositRequired}) | Hours: ${s.workingHours}`)
     .join('\n');
 
+  // Visitor Intelligence & Context Memory
+  let visitorContextMemory = '';
+  if (visitor) {
+    visitorContextMemory = `
+ACTIVE VISITOR CONTEXT & MEMORY:
+- Visitor ID: ${visitor.id}
+- Known Identity: ${visitor.name || 'Anonymous Visitor'} (${visitor.email || 'No email provided yet'})
+- Location: ${visitor.country || 'Global'}${visitor.city ? `, ${visitor.city}` : ''}
+- Session Count: ${visitor.sessionsCount} (${visitor.sessionsCount > 1 ? 'RETURNING VISITOR' : 'New Visitor'})
+- Current Page: ${customerMeta?.page || visitor.currentPage || 'Website'}
+- Previous Page: ${visitor.previousPage || 'None'}
+- Known Interests: ${visitor.memory?.interests?.join(', ') || 'General luxury bespoke products'}
+- Known Budget: ${visitor.memory?.budget || 'Not specified'}
+- Known Timeline: ${visitor.memory?.timeline || 'Not specified'}
+- Last Product Viewed: ${visitor.memory?.lastProductViewed || 'None'}
+- Previous Conversation Context: ${visitor.memory?.lastConversationSummary || 'None'}
+
+RETURNING VISITOR & MEMORY RULES:
+1. If this is a returning visitor (${visitor.sessionsCount > 1}), acknowledge them warmly and reference their known interest naturally if relevant.
+2. NEVER repeatedly ask questions already answered in the VISITOR CONTEXT (e.g. if their budget or style is already known, do not ask again).
+3. If the visitor provides new contact info (name, email, phone) or intent, remember it for their profile.
+`;
+  }
+
   // Interpolate global system prompt template
   const globalPromptTemplate = db.llmConfig?.globalSystemPromptTemplate || '';
   const agentPersona = db.llmConfig?.personaPrompts?.receptionist || agent?.personality || '';
@@ -263,6 +313,7 @@ ${agentPersona}
 Agent Name: ${agent?.name || 'Aria'} | Tone: ${agent?.tone || 'professional'}
 Response Length: ${agent?.responseLength || 'balanced'} | Language: ${agent?.language || 'en'}
 Business Location: ${business.location} | Business Hours: ${business.businessHours} | Contact: ${business.contactEmail}, ${business.contactPhone}
+${visitorContextMemory}
 
 BUSINESS OBJECTIVES:
 ${agent?.objectives?.map((o) => `- ${o}`).join('\n') || '- Provide excellent customer service'}
@@ -274,6 +325,7 @@ STRICT AI SAFETY & FACTUALITY RULES:
 4. When they want to purchase, you can create an Order or payment link.
 5. When they want an appointment, check availability and book it.
 6. If the customer asks for a human or is angry, escalate gracefully.
+7. You may trigger website actions (e.g. display_product, open_booking_modal, start_checkout, navigate_page) to guide the visitor smoothly.
 
 KNOWLEDGE BASE:
 ${kbContext || 'No additional documents uploaded yet.'}

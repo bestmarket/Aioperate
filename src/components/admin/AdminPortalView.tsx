@@ -1923,7 +1923,464 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
         </div>
       )}
 
-      {/* TAB: FEATURE FLAGS */}
+      {/* TAB: PAYMENT GATEWAYS (LEMON SQUEEZY & CRYPTO) */}
+      {activeAdminTab === 'payments' && paymentGateways && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-rose-500/10 border border-amber-500/20 dark:border-amber-500/30">
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-amber-400" />
+                <span>Primary Payment Settlement Gateways</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  Lemon Squeezy & Crypto Active
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                Connect and govern merchant processing. Transactions can be routed through Lemon Squeezy (Merchant of Record with international VAT, cards, Apple Pay) or directly settled on-chain via Cryptocurrency Gateways.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {saveGatewaysSuccess && (
+                <span className="text-xs text-emerald-400 flex items-center gap-1 font-semibold animate-fade-in">
+                  <Check className="w-4 h-4" /> Saved & Activated
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={savingGateways}
+                onClick={handleSavePaymentGateways}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {savingGateways ? 'Applying Changes...' : 'Save & Publish Gateways'}
+              </button>
+            </div>
+          </div>
+
+          {/* Active Default Router Selector */}
+          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <span>Active Default Provider For Autonomous Checkout</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                {
+                  id: 'lemonsqueezy',
+                  label: 'Lemon Squeezy',
+                  sub: 'Merchant of Record, Global Cards, Tax compliant',
+                  color: 'border-amber-500/50 bg-amber-500/10 text-amber-400',
+                  icon: CreditCard,
+                  connected: paymentGateways.lemonSqueezy?.enabled,
+                },
+                {
+                  id: 'crypto',
+                  label: 'Cryptocurrency Gateway',
+                  sub: 'USDT, USDC, BTC, ETH, SOL zero chargeback',
+                  color: 'border-purple-500/50 bg-purple-500/10 text-purple-400',
+                  icon: Coins,
+                  connected: paymentGateways.crypto?.enabled,
+                },
+                {
+                  id: 'stripe',
+                  label: 'Stripe (Optional)',
+                  sub: 'Standard CC Processing (Currently Inactive)',
+                  color: 'border-slate-700 bg-slate-800/40 text-slate-400',
+                  icon: CreditCard,
+                  connected: paymentGateways.stripe?.enabled,
+                },
+              ].map((p) => {
+                const isSelected = paymentGateways.activeDefaultProvider === p.id;
+                const IconComp = p.icon;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() =>
+                      setPaymentGateways({
+                        ...paymentGateways,
+                        activeDefaultProvider: p.id as any,
+                      })
+                    }
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? `${p.color} ring-2 ring-amber-500/40`
+                        : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <IconComp className="w-4 h-4" />
+                        <span>{p.label}</span>
+                      </div>
+                      {p.connected ? (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                          Offline
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-snug">{p.sub}</p>
+                    <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                      <span>{isSelected ? '● Default Gateway' : 'Click to select as default'}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lemon Squeezy Detailed Config */}
+          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg border border-amber-500/30">
+                  🍋
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Lemon Squeezy Configuration
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
+                      Live Connected
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Merchant of record handling customer checkout, fraud detection, and multi-currency payouts.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      lemonSqueezy: {
+                        ...paymentGateways.lemonSqueezy,
+                        enabled: !paymentGateways.lemonSqueezy.enabled,
+                      },
+                    })
+                  }
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-300"
+                >
+                  <span>Gateway Enabled</span>
+                  {paymentGateways.lemonSqueezy.enabled ? (
+                    <ToggleRight className="w-7 h-7 text-amber-400" />
+                  ) : (
+                    <ToggleLeft className="w-7 h-7 text-slate-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Store Identifier / Slug
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.lemonSqueezy.storeId || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      lemonSqueezy: {
+                        ...paymentGateways.lemonSqueezy,
+                        storeId: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="e.g. lmsq_store_84920"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  API Key (Secret)
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.lemonSqueezy.apiKeyMasked || paymentGateways.lemonSqueezy.apiKey || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      lemonSqueezy: {
+                        ...paymentGateways.lemonSqueezy,
+                        apiKey: e.target.value,
+                        apiKeyMasked: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="lsq_live_..."
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Webhook Signing Secret
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.lemonSqueezy.webhookSecretMasked || paymentGateways.lemonSqueezy.webhookSecret || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      lemonSqueezy: {
+                        ...paymentGateways.lemonSqueezy,
+                        webhookSecret: e.target.value,
+                        webhookSecretMasked: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="whsec_..."
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>Webhook URL:</span>
+                <code className="text-amber-300 font-mono">https://api.yourdomain.com/api/webhooks/lemonsqueezy</code>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={paymentGateways.lemonSqueezy.testMode}
+                    onChange={(e) =>
+                      setPaymentGateways({
+                        ...paymentGateways,
+                        lemonSqueezy: {
+                          ...paymentGateways.lemonSqueezy,
+                          testMode: e.target.checked,
+                        },
+                      })
+                    }
+                    className="rounded border-slate-700 text-amber-500 focus:ring-0"
+                  />
+                  <span>Test Mode (Sandbox)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Crypto Payment Gateway Detailed Config */}
+          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg border border-purple-500/30">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Cryptocurrency Settlement Gateway
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-900/50 text-purple-300 border border-purple-700/50">
+                      Multi-Chain Ready
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Accept Bitcoin, Ethereum, Solana, and USDT/USDC stablecoins with immediate wallet routing and 0% chargebacks.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        enabled: !paymentGateways.crypto.enabled,
+                      },
+                    })
+                  }
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-300"
+                >
+                  <span>Gateway Enabled</span>
+                  {paymentGateways.crypto.enabled ? (
+                    <ToggleRight className="w-7 h-7 text-purple-400" />
+                  ) : (
+                    <ToggleLeft className="w-7 h-7 text-slate-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Crypto Provider Engine
+                </label>
+                <select
+                  value={paymentGateways.crypto.provider}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        provider: e.target.value as any,
+                      },
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-500"
+                >
+                  <option value="nowpayments">NOWPayments (Custody / Non-Custodial)</option>
+                  <option value="coinbase_commerce">Coinbase Commerce</option>
+                  <option value="btcpayserver">BTCPay Server (Self-Hosted)</option>
+                  <option value="web3_direct">Web3 Direct Wallet Connect</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Provider API / Project Key
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.crypto.apiKeyMasked || paymentGateways.crypto.apiKey || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        apiKey: e.target.value,
+                        apiKeyMasked: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="np_live_... / cc_..."
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  IPN / Webhook Secret Key
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.crypto.webhookSecretMasked || paymentGateways.crypto.webhookSecret || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        webhookSecret: e.target.value,
+                        webhookSecretMasked: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="ipn_secret_..."
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Accepted Currencies & Tokens
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(['USDT', 'USDC', 'BTC', 'ETH', 'SOL'] as const).map((token) => {
+                  const isAccepted = paymentGateways.crypto.acceptedCurrencies?.includes(token);
+                  return (
+                    <button
+                      key={token}
+                      type="button"
+                      onClick={() => {
+                        const current = paymentGateways.crypto.acceptedCurrencies || [];
+                        const next = isAccepted
+                          ? current.filter((c) => c !== token)
+                          : [...current, token];
+                        setPaymentGateways({
+                          ...paymentGateways,
+                          crypto: {
+                            ...paymentGateways.crypto,
+                            acceptedCurrencies: next,
+                          },
+                        });
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                        isAccepted
+                          ? 'bg-purple-900/40 text-purple-300 border-purple-500/50 shadow-sm'
+                          : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <span>{token}</span>
+                      {isAccepted ? <Check className="w-3.5 h-3.5 text-purple-400" /> : <span className="text-[10px]">+</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Cold Storage / Settlement Wallet
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.crypto.walletAddress || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        walletAddress: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="0x... / bc1q..."
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Supported Settlement Networks
+                </label>
+                <input
+                  type="text"
+                  value={paymentGateways.crypto.network || ''}
+                  onChange={(e) =>
+                    setPaymentGateways({
+                      ...paymentGateways,
+                      crypto: {
+                        ...paymentGateways.crypto,
+                        network: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="e.g. Ethereum, Solana, Bitcoin, Polygon"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-400" />
+                <span>Crypto IPN Callback:</span>
+                <code className="text-purple-300 font-mono">https://api.yourdomain.com/api/webhooks/crypto</code>
+              </div>
+              <div>
+                <span className="text-emerald-400 font-semibold">Instant confirmation with 0 chargeback exposure</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {activeAdminTab === 'flags' && flags && (
         <div className="space-y-4">
           <div className="text-xs text-slate-400">

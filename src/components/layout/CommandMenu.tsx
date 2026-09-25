@@ -51,6 +51,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     { id: 'test_ai', label: 'Test AI Employee in Real-time Sandbox', icon: Bot, action: onOpenTest },
     { id: 'dashboard', label: 'Go to Business Dashboard', icon: LayoutDashboard, nav: 'dashboard' },
     { id: 'team_ai', label: 'AI Business Team (8 Specialized Personas)', icon: Users, nav: 'team_ai' },
+    { id: 'live_website', label: 'Live Website & Visitor Control Machine', icon: Users, nav: 'live_website' },
     { id: 'marketing', label: 'AI Marketing Studio & Copy Generator', icon: Zap, nav: 'marketing' },
     { id: 'strategy', label: 'AI Business Strategist (90-Day Plans)', icon: Zap, nav: 'strategy' },
     { id: 'website_builder', label: 'AI Landing Page & Website Builder', icon: LayoutDashboard, nav: 'website_builder' },

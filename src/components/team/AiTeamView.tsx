@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Bot,
@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.tsx';
+import { api } from '../../services/api.ts';
 import { AiTeamMember } from '../../types.ts';
 
 const DEFAULT_AI_TEAM: AiTeamMember[] = [
@@ -135,16 +136,48 @@ export const AiTeamView: React.FC<AiTeamViewProps> = ({ onOpenTestSandbox }) => 
   const [testingPersona, setTestingPersona] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const toggleStatus = (id: string) => {
-    setTeam((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: m.status === 'active' ? 'standby' : 'active' } : m))
-    );
+  const businessId = activeBusiness?.id || 'biz_aura_001';
+
+  const loadTeam = async () => {
+    try {
+      const data = await api.getAiTeam(businessId);
+      if (Array.isArray(data) && data.length > 0) {
+        setTeam(data);
+        const match = data.find((m) => m.id === selectedMember.id) || data[0];
+        setSelectedMember(match);
+      }
+    } catch (e) {
+      console.error('Failed to load AI team:', e);
+    }
   };
 
-  const handleSaveMember = () => {
+  useEffect(() => {
+    loadTeam();
+  }, [businessId]);
+
+  const toggleStatus = async (id: string) => {
+    const target = team.find((m) => m.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'active' ? 'standby' : 'active';
+    setTeam((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: nextStatus } : m))
+    );
+    try {
+      await api.updateAiTeamMember(businessId, id, { status: nextStatus });
+    } catch (err) {
+      console.error('Failed to update status on server:', err);
+    }
+  };
+
+  const handleSaveMember = async () => {
     setTeam((prev) => prev.map((m) => (m.id === selectedMember.id ? selectedMember : m)));
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+    try {
+      await api.updateAiTeamMember(businessId, selectedMember.id, selectedMember);
+    } catch (err) {
+      console.error('Failed to persist AI team member:', err);
+    }
   };
 
   const runPersonaSimulation = async () => {

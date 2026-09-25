@@ -158,6 +158,35 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onNavigate, onOpenTe
         })}
       </div>
 
+      {/* Live Website Visitor Machine Banner */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-3 w-3 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <div>
+            <div className="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-2">
+              <span>Live Website Machine Active</span>
+              <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
+                3 Visitors Online Now
+              </span>
+            </div>
+            <div className="text-[11px] text-stone-500 dark:text-slate-400 mt-0.5">
+              Autonomous AI Sales Closer & Receptionist routing active. Alexander Wright viewing Monaco Overcoat.
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onNavigate('live_website')}
+          className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-stone-100 text-white dark:text-stone-900 text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          <span>Open Live Control Machine</span>
+          <ArrowUpRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
       {/* AI Impact Section */}
       <div className="p-6 rounded-2xl bg-white dark:bg-indigo-950/20 bg-gradient-to-br from-rose-50/60 to-pink-50/40 dark:from-indigo-950/30 dark:to-slate-900 border border-rose-200/70 dark:border-indigo-500/20">
         <div className="flex items-center justify-between mb-4">

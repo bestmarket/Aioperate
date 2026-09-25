@@ -211,6 +211,7 @@ export interface PaymentRequest {
   bookingId?: string;
   customerId: string;
   customerName: string;
+  customerEmail?: string;
   amount: number;
   currency: string;
   provider: 'lemonsqueezy' | 'crypto' | 'stripe' | 'paystack' | 'paypal' | 'sandbox';
@@ -219,6 +220,12 @@ export interface PaymentRequest {
   transactionRef: string;
   description: string;
   createdAt: string;
+  cryptoToken?: 'USDT' | 'USDC' | 'BTC' | 'ETH' | 'SOL';
+  cryptoNetwork?: string;
+  cryptoAddress?: string;
+  cryptoTxHash?: string;
+  webhookVerifiedAt?: string;
+  webhookEvent?: string;
 }
 
 export interface LemonSqueezyConfig {
@@ -628,6 +635,8 @@ export interface SystemActivity {
     | 'chat_message'
     | 'lead_captured'
     | 'order_created'
+    | 'order_paid'
+    | 'payment_settled'
     | 'booking_made'
     | 'gemini_called'
     | 'business_status_changed';
@@ -636,5 +645,149 @@ export interface SystemActivity {
   description: string;
   actor: string;
   metadata?: Record<string, any>;
+}
+
+export interface VoiceCall {
+  id: string;
+  businessId: string;
+  callerName: string;
+  callerPhone: string;
+  direction: 'inbound' | 'outbound';
+  durationSeconds: number;
+  status: 'completed' | 'missed' | 'transcribed';
+  outcome: 'lead_captured' | 'appointment_booked' | 'faq_answered' | 'escalated';
+  summary: string;
+  transcript: string[];
+  recordingUrl?: string;
+  timestamp: string;
+}
+
+// ==========================================
+// WEBSITE AI AGENT & LIVE VISITOR INTELLIGENCE
+// ==========================================
+
+export interface VisitorMemory {
+  interests?: string[];
+  budget?: string;
+  timeline?: string;
+  preferences?: string[];
+  notes?: string[];
+  lastProductViewed?: string;
+  lastRecommendedProduct?: string;
+  lastConversationSummary?: string;
+  preferredTone?: string;
+}
+
+export interface VisitorProfile {
+  id: string; // e.g. vis_1042
+  businessId: string;
+  customerId?: string; // Linked when visitor identifies via form, chat, or auth
+  name?: string;
+  email?: string;
+  phone?: string;
+  country: string;
+  city?: string;
+  firstSeen: string;
+  lastSeen: string;
+  sessionsCount: number;
+  currentSessionId: string;
+  isOnline: boolean;
+  currentPage: string;
+  previousPage?: string;
+  timeOnCurrentPageSeconds: number;
+  totalTimeSpentSeconds: number;
+  referrer?: string;
+  device: {
+    browser?: string;
+    os?: string;
+    deviceType?: 'desktop' | 'mobile' | 'tablet';
+  };
+  consentGiven: boolean;
+  currentIntent?: string;
+  currentAgentRole?: 'receptionist' | 'sales' | 'support' | 'booking' | 'retention';
+  humanTakeover: boolean;
+  assignedStaff?: string;
+  conversationId?: string;
+  memory: VisitorMemory;
+  proactiveDismissals?: Record<string, string>; // ruleId -> dismissedAt ISO
+}
+
+export interface VisitorEvent {
+  id: string;
+  visitorId: string;
+  sessionId: string;
+  businessId: string;
+  type:
+    | 'page_view'
+    | 'page_exit'
+    | 'session_start'
+    | 'session_end'
+    | 'click'
+    | 'product_view'
+    | 'product_search'
+    | 'product_filter'
+    | 'add_to_cart'
+    | 'checkout_started'
+    | 'booking_started'
+    | 'booking_completed'
+    | 'form_started'
+    | 'form_completed'
+    | 'chat_started'
+    | 'chat_message'
+    | 'voice_started'
+    | 'AI_action'
+    | 'lead_captured'
+    | 'human_handoff'
+    | 'proactive_triggered'
+    | 'proactive_dismissed';
+  page: string;
+  metadata?: Record<string, any>;
+  timestamp: string;
+}
+
+export interface WebsiteAction {
+  type:
+    | 'scroll_to_section'
+    | 'navigate_page'
+    | 'highlight_element'
+    | 'search_catalog'
+    | 'filter_catalog'
+    | 'display_product'
+    | 'display_service'
+    | 'open_booking_modal'
+    | 'start_checkout'
+    | 'show_payment_option'
+    | 'capture_lead'
+    | 'open_support'
+    | 'request_human_assistance';
+  payload?: Record<string, any>;
+}
+
+export interface ProactiveRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  triggerType: 'time_on_page' | 'page_visit' | 'returning_visitor' | 'cart_abandoned' | 'repeated_view' | 'pricing_view';
+  targetPage?: string;
+  triggerDelaySeconds?: number;
+  audience: 'all' | 'new_visitors' | 'returning_visitors' | 'high_intent' | 'known_customers';
+  message: string;
+  agentRole: 'receptionist' | 'sales' | 'support' | 'booking' | 'retention';
+  maxImpressionsPerVisitor: number;
+  cooldownDays: number;
+  actionPayload?: Record<string, any>;
+}
+
+export interface WebsiteAiConfig {
+  businessId: string;
+  enabledAgentRoles: string[]; // e.g. ['receptionist', 'sales', 'support', 'booking', 'retention']
+  allowHumanTakeover: boolean;
+  antiRepetitionCooldownHours: number;
+  maxProactivePerSession: number;
+  allowedWebsiteActions: string[];
+  proactiveRules: ProactiveRule[];
+  privacyConsentRequired: boolean;
+  voiceAgentEnabled: boolean;
+  installationSnippet?: string;
 }
 

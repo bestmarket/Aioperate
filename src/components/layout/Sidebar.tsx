@@ -30,6 +30,7 @@ import {
   Globe,
   Star,
   Sparkles,
+  Activity,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -53,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'team_ai', label: 'AI Business Team', icon: Users, badge: '8 Roles' },
+        { id: 'live_website', label: 'Live Website', icon: Activity, badge: 'Live' },
         { id: 'agent', label: 'Agent Builder', icon: Bot, badge: 'Active' },
         { id: 'inbox', label: 'Unified Inbox', icon: Inbox, badgeCount: unreadCount },
         { id: 'widget', label: 'Website Chat', icon: MessageSquare },
